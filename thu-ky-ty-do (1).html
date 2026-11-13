@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Thư Ký Tỷ Đô</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+    :root {
+      --primary: #0f172a;
+      --accent: #d4a017;
+      --bg: #f8fafc;
+    }
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+      background: var(--bg);
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+    }
+    .theme-dark {
+      --bg: #0f172a;
+      --primary: #f8fafc;
+      background: #0f172a !important;
+      color: #e2e8f0;
+    }
+    .theme-dark .card { background: #1e293b; color: #e2e8f0; }
+    .theme-dark input, .theme-dark select, .theme-dark textarea {
+      background: #334155; border-color: #475569; color: #f1f5f9;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .tab-active {
+      color: #d4a017;
+      border-bottom: 3px solid #d4a017;
+      font-weight: 600;
+    }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-approved { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .status-doing { background: #dbeafe; color: #1e40af; }
+    .status-done { background: #d1fae5; color: #065f46; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 500; }
+    .avatar-ring { box-shadow: 0 0 0 3px #d4a017; }
+  </style>
+</head>
+<body class="pb-28">
+
+  <!-- ========== HEADER ========== -->
+  <header class="sticky top-0 z-40 bg-slate-900 text-white px-4 py-3 flex items-center gap-3">
+    <div class="relative">
+      <img id="adminAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=ThuKyTyDo" 
+           class="w-12 h-12 rounded-full avatar-ring object-cover bg-white" alt="Avatar" />
+      <button onclick="changeAvatar()" class="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center">+</button>
+    </div>
+    <div class="flex-1">
+      <h1 class="font-bold text-lg leading-tight">Thư Ký Tỷ Đô</h1>
+      <p class="text-xs text-slate-300">Ban Điều Hành · Quản trị cao nhất</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm" title="Đổi giao diện">🎨</button>
+      <button onclick="openSecurity()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm" title="Bảo mật">🔒</button>
+    </div>
+  </header>
+
+  <!-- ========== TABS ========== -->
+  <nav class="sticky top-[72px] z-30 bg-white border-b flex text-xs overflow-x-auto">
+    <button onclick="switchTab('home')" class="tab-btn flex-shrink-0 px-4 py-3 tab-active" data-tab="home">Tổng quan</button>
+    <button onclick="switchTab('social')" class="tab-btn flex-shrink-0 px-4 py-3 text-slate-500" data-tab="social">Mạng xã hội</button>
+    <button onclick="switchTab('tasks')" class="tab-btn flex-shrink-0 px-4 py-3 text-slate-500" data-tab="tasks">Công việc</button>
+    <button onclick="switchTab('live')" class="tab-btn flex-shrink-0 px-4 py-3 text-slate-500" data-tab="live">Live</button>
+    <button onclick="switchTab('video')" class="tab-btn flex-shrink-0 px-4 py-3 text-slate-500" data-tab="video">Video</button>
+    <button onclick="switchTab('members')" class="tab-btn flex-shrink-0 px-4 py-3 text-slate-500" data-tab="members">Thành viên</button>
+    <button onclick="switchTab('notes')" class="tab-btn flex-shrink-0 px-4 py-3 text-slate-500" data-tab="notes">Nhắc việc</button>
+  </nav>
+
+  <main class="px-3 py-4 space-y-4">
+
+    <!-- ===== TAB TỔNG QUAN ===== -->
+    <section id="tab-home" class="tab-content space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="card p-4">
+          <div class="text-xs text-slate-500">Tổng theo dõi</div>
+          <div class="text-xl font-bold text-slate-800" id="statFollowers">0</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-slate-500">Doanh thu</div>
+          <div class="text-xl font-bold text-amber-600" id="statRevenue">0đ</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-slate-500">Việc chờ duyệt</div>
+          <div class="text-xl font-bold text-orange-600" id="statPending">0</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-xs text-slate-500">Thành viên</div>
+          <div class="text-xl font-bold text-blue-600" id="statMembers">0</div>
+        </div>
+      </div>
+
+      <div class="card p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-semibold">Việc cần duyệt hôm nay</h3>
+          <button onclick="switchTab('tasks')" class="text-xs text-amber-600">Xem tất cả →</button>
+        </div>
+        <div id="homePending" class="space-y-2 text-sm"></div>
+      </div>
+
+      <div class="card p-4">
+        <h3 class="font-semibold mb-3">Kênh mạng xã hội</h3>
+        <div id="homeSocial" class="space-y-2 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- ===== TAB MẠNG XÃ HỘI ===== -->
+    <section id="tab-social" class="tab-content hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold">Kênh mạng xã hội</h2>
+        <button onclick="openSocialModal()" class="bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg">+ Thêm kênh</button>
+      </div>
+      <div id="socialList" class="space-y-3"></div>
+      <p class="text-xs text-slate-400 text-center">Số liệu tự cập nhật (demo). Kết nối API thật ở giai đoạn sau.</p>
+    </section>
+
+    <!-- ===== TAB CÔNG VIỆC ===== -->
+    <section id="tab-tasks" class="tab-content hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold">Quản lý công việc</h2>
+        <button onclick="openTaskModal()" class="bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg">+ Tạo việc</button>
+      </div>
+
+      <div class="flex gap-2 text-xs overflow-x-auto pb-1">
+        <button onclick="filterTasks('all')" class="task-filter px-3 py-1 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap" data-f="all">Tất cả</button>
+        <button onclick="filterTasks('pending')" class="task-filter px-3 py-1 rounded-full bg-slate-100 whitespace-nowrap" data-f="pending">Chờ duyệt</button>
+        <button onclick="filterTasks('approved')" class="task-filter px-3 py-1 rounded-full bg-slate-100 whitespace-nowrap" data-f="approved">Đã duyệt</button>
+        <button onclick="filterTasks('doing')" class="task-filter px-3 py-1 rounded-full bg-slate-100 whitespace-nowrap" data-f="doing">Đang làm</button>
+        <button onclick="filterTasks('done')" class="task-filter px-3 py-1 rounded-full bg-slate-100 whitespace-nowrap" data-f="done">Hoàn thành</button>
+      </div>
+
+      <div id="taskList" class="space-y-3"></div>
+    </section>
+
+    <!-- ===== TAB LIVE ===== -->
+    <section id="tab-live" class="tab-content hidden space-y-4">
+      <div class="card p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-semibold">Livestream</h3>
+          <label class="flex items-center gap-2 text-sm">
+            <span id="liveStatusText">Đang tắt</span>
+            <input type="checkbox" id="liveToggle" onchange="toggleLive()" class="w-5 h-5 accent-amber-500" />
+          </label>
+        </div>
+        <div id="liveBox" class="bg-slate-100 rounded-xl h-48 flex items-center justify-center text-slate-400 text-sm">
+          Livestream đang tắt
+        </div>
+        <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+          <a id="liveFb" href="#" target="_blank" class="bg-blue-600 text-white text-center py-2 rounded-lg">Facebook</a>
+          <a id="liveTiktok" href="#" target="_blank" class="bg-black text-white text-center py-2 rounded-lg">TikTok</a>
+          <a id="liveYt" href="#" target="_blank" class="bg-red-600 text-white text-center py-2 rounded-lg">YouTube</a>
+        </div>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-semibold mb-2">Cài đặt liên kết Live</h3>
+        <input id="liveLinkFb" class="w-full border rounded-lg px-3 py-2 text-sm mb-2" placeholder="Link Facebook Live" />
+        <input id="liveLinkTiktok" class="w-full border rounded-lg px-3 py-2 text-sm mb-2" placeholder="Link TikTok Live" />
+        <input id="liveLinkYt" class="w-full border rounded-lg px-3 py-2 text-sm mb-2" placeholder="Link YouTube Live" />
+        <button onclick="saveLiveLinks()" class="w-full bg-slate-900 text-white py-2 rounded-lg text-sm">Lưu liên kết</button>
+      </div>
+    </section>
+
+    <!-- ===== TAB VIDEO ===== -->
+    <section id="tab-video" class="tab-content hidden space-y-4">
+      <div class="card p-4">
+        <h3 class="font-semibold mb-3">Tạo video ngắn theo yêu cầu</h3>
+        <textarea id="videoPrompt" class="w-full border rounded-lg px-3 py-2 text-sm" rows="3" placeholder="Mô tả video muốn tạo... (ví dụ: Video 15s giới thiệu sản phẩm An Yên)"></textarea>
+        <button onclick="createVideo()" class="w-full bg-amber-500 text-black font-medium py-2.5 rounded-lg mt-3 text-sm">Tạo video (AI)</button>
+        <p class="text-xs text-slate-400 mt-2 text-center">Demo: sẽ lưu yêu cầu. Tích hợp AI thật ở giai đoạn sau.</p>
+      </div>
+
+      <div class="card p-4">
+        <h3 class="font-semibold mb-3">Kho lưu trữ theo hạng mục</h3>
+        <div class="flex gap-2 mb-3 overflow-x-auto text-xs">
+          <button onclick="filterStorage('all')" class="storage-filter px-3 py-1 rounded-full bg-amber-100 text-amber-800" data-s="all">Tất cả</button>
+          <button onclick="filterStorage('marketing')" class="storage-filter px-3 py-1 rounded-full bg-slate-100" data-s="marketing">Marketing</button>
+          <button onclick="filterStorage('product')" class="storage-filter px-3 py-1 rounded-full bg-slate-100" data-s="product">Sản phẩm</button>
+          <button onclick="filterStorage('live')" class="storage-filter px-3 py-1 rounded-full bg-slate-100" data-s="live">Live</button>
+          <button onclick="filterStorage('other')" class="storage-filter px-3 py-1 rounded-full bg-slate-100" data-s="other">Khác</button>
+        </div>
+        <div id="storageList" class="space-y-2 text-sm"></div>
+        <button onclick="addStorageItem()" class="w-full border border-dashed rounded-lg py-2 text-sm text-slate-500 mt-3">+ Thêm vào kho</button>
+      </div>
+    </section>
+
+    <!-- ===== TAB THÀNH VIÊN ===== -->
+    <section id="tab-members" class="tab-content hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold">Quản lý thành viên</h2>
+        <button onclick="openMemberModal()" class="bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg">+ Thêm</button>
+      </div>
+      <div id="memberList" class="space-y-3"></div>
+    </section>
+
+    <!-- ===== TAB NHẮC VIỆC ===== -->
+    <section id="tab-notes" class="tab-content hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold">Nhắc việc hàng ngày</h2>
+        <button onclick="openNoteModal()" class="bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg">+ Thêm</button>
+      </div>
+      <div id="noteList" class="space-y-3"></div>
+    </section>
+  </main>
+
+  <!-- ========== MODALS ========== -->
+  <!-- Social Modal -->
+  <div id="socialModal" class="fixed inset-0 bg-black/50 z-50 hidden items-end justify-center">
+    <div class="bg-white rounded-t-2xl w-full max-w-[430px] p-5 max-h-[85vh] overflow-y-auto">
+      <h3 class="font-bold text-lg mb-4">Thêm / Sửa kênh</h3>
+      <input type="hidden" id="socialId" />
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-500">Nền tảng</label>
+          <select id="socialPlatform" class="w-full border rounded-lg px-3 py-2 mt-1">
+            <option value="facebook">Facebook</option>
+            <option value="tiktok">TikTok</option>
+            <option value="youtube">YouTube</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Tên kênh</label>
+          <input id="socialName" class="w-full border rounded-lg px-3 py-2 mt-1" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Link</label>
+          <input id="socialLink" class="w-full border rounded-lg px-3 py-2 mt-1" placeholder="https://" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-500">Người theo dõi</label>
+            <input id="socialFollowers" type="number" class="w-full border rounded-lg px-3 py-2 mt-1" value="0" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Doanh thu (đ)</label>
+            <input id="socialRevenue" type="number" class="w-full border rounded-lg px-3 py-2 mt-1" value="0" />
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="closeSocialModal()" class="flex-1 border rounded-lg py-2.5">Hủy</button>
+        <button onclick="saveSocial()" class="flex-1 bg-slate-900 text-white rounded-lg py-2.5">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Modal -->
+  <div id="taskModal" class="fixed inset-0 bg-black/50 z-50 hidden items-end justify-center">
+    <div class="bg-white rounded-t-2xl w-full max-w-[430px] p-5 max-h-[85vh] overflow-y-auto">
+      <h3 class="font-bold text-lg mb-4">Tạo công việc mới</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-500">Tiêu đề</label>
+          <input id="taskTitle" class="w-full border rounded-lg px-3 py-2 mt-1" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Người thực hiện</label>
+          <select id="taskAssignee" class="w-full border rounded-lg px-3 py-2 mt-1"></select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Hạn hoàn thành</label>
+          <input id="taskDeadline" type="date" class="w-full border rounded-lg px-3 py-2 mt-1" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Mô tả</label>
+          <textarea id="taskDesc" class="w-full border rounded-lg px-3 py-2 mt-1" rows="3"></textarea>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="taskNeedApprove" checked class="w-4 h-4 accent-amber-500" />
+          <label class="text-sm">Cần Quản trị viên cao nhất duyệt</label>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="closeTaskModal()" class="flex-1 border rounded-lg py-2.5">Hủy</button>
+        <button onclick="saveTask()" class="flex-1 bg-slate-900 text-white rounded-lg py-2.5">Tạo việc</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Modal -->
+  <div id="memberModal" class="fixed inset-0 bg-black/50 z-50 hidden items-end justify-center">
+    <div class="bg-white rounded-t-2xl w-full max-w-[430px] p-5">
+      <h3 class="font-bold text-lg mb-4">Thêm thành viên</h3>
+      <div class="space-y-3">
+        <input id="memberName" class="w-full border rounded-lg px-3 py-2" placeholder="Họ tên" />
+        <select id="memberRole" class="w-full border rounded-lg px-3 py-2">
+          <option value="member">Thành viên</option>
+          <option value="editor">Biên tập / Kiểm duyệt</option>
+          <option value="admin">Quản trị viên</option>
+        </select>
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="closeMemberModal()" class="flex-1 border rounded-lg py-2.5">Hủy</button>
+        <button onclick="saveMember()" class="flex-1 bg-slate-900 text-white rounded-lg py-2.5">Thêm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Note Modal -->
+  <div id="noteModal" class="fixed inset-0 bg-black/50 z-50 hidden items-end justify-center">
+    <div class="bg-white rounded-t-2xl w-full max-w-[430px] p-5">
+      <h3 class="font-bold text-lg mb-4">Thêm nhắc việc</h3>
+      <div class="space-y-3">
+        <textarea id="noteContent" class="w-full border rounded-lg px-3 py-2" rows="3" placeholder="Nội dung cần nhắc..."></textarea>
+        <input id="noteTime" type="datetime-local" class="w-full border rounded-lg px-3 py-2" />
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="closeNoteModal()" class="flex-1 border rounded-lg py-2.5">Hủy</button>
+        <button onclick="saveNote()" class="flex-1 bg-slate-900 text-white rounded-lg py-2.5">Lưu & Nhắc</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Modal -->
+  <div id="securityModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5">
+      <h3 class="font-bold text-lg mb-4">Bảo mật Quản trị</h3>
+      <p class="text-sm text-slate-500 mb-3">Đặt mật khẩu để khóa các thao tác quan trọng (duyệt việc, xóa thành viên, bật/tắt live...)</p>
+      <input id="adminPass" type="password" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Mật khẩu hiện tại / mới" />
+      <div class="flex gap-2">
+        <button onclick="closeSecurity()" class="flex-1 border rounded-lg py-2.5">Đóng</button>
+        <button onclick="setAdminPass()" class="flex-1 bg-slate-900 text-white rounded-lg py-2.5">Lưu mật khẩu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== DATA ====================
+    let socials = JSON.parse(localStorage.getItem('tktd_socials') || '[]');
+    let tasks = JSON.parse(localStorage.getItem('tktd_tasks') || '[]');
+    let members = JSON.parse(localStorage.getItem('tktd_members') || '[{"id":1,"name":"Quản trị cao nhất","role":"admin"}]');
+    let notes = JSON.parse(localStorage.getItem('tktd_notes') || '[]');
+    let storage = JSON.parse(localStorage.getItem('tktd_storage') || '[]');
+    let liveOn = localStorage.getItem('tktd_live') === 'true';
+    let adminPass = localStorage.getItem('tktd_pass') || '';
+    let currentFilter = 'all';
+    let storageFilter = 'all';
+
+    // Sample data
+    if (socials.length === 0) {
+      socials = [
+        { id: 1, platform: 'facebook', name: 'Thư Ký Tỷ Đô FB', link: 'https://facebook.com', followers: 15200, revenue: 4200000 },
+        { id: 2, platform: 'tiktok', name: 'Thư Ký Tỷ Đô TikTok', link: 'https://tiktok.com', followers: 28500, revenue: 6800000 },
+        { id: 3, platform: 'youtube', name: 'Thư Ký Tỷ Đô YT', link: 'https://youtube.com', followers: 9800, revenue: 3100000 }
+      ];
+      save('tktd_socials', socials);
+    }
+
+    function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+    function formatMoney(n) {
+      return new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
+    }
+
+    function icon(p) {
+      return { facebook: '📘', tiktok: '🎵', youtube: '▶️' }[p] || '🔗';
+    }
+
+    // ==================== TABS ====================
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('tab-active');
+        b.classList.add('text-slate-500');
+      });
+      const btn = document.querySelector(`[data-tab="${tab}"]`);
+      btn.classList.add('tab-active');
+      btn.classList.remove('text-slate-500');
+
+      if (tab === 'home') renderHome();
+      if (tab === 'social') renderSocials();
+      if (tab === 'tasks') renderTasks();
+      if (tab === 'live') renderLive();
+      if (tab === 'video') renderStorage();
+      if (tab === 'members') renderMembers();
+      if (tab === 'notes') renderNotes();
+    }
+
+    // ==================== HOME ====================
+    function renderHome() {
+      const followers = socials.reduce((s, x) => s + (x.followers || 0), 0);
+      const revenue = socials.reduce((s, x) => s + (x.revenue || 0), 0);
+      const pending = tasks.filter(t => t.status === 'pending').length;
+
+      document.getElementById('statFollowers').textContent = followers.toLocaleString('vi-VN');
+      document.getElementById('statRevenue').textContent = formatMoney(revenue);
+      document.getElementById('statPending').textContent = pending;
+      document.getElementById('statMembers').textContent = members.length;
+
+      const pendingBox = document.getElementById('homePending');
+      const pendList = tasks.filter(t => t.status === 'pending').slice(0, 3);
+      pendingBox.innerHTML = pendList.length ? pendList.map(t => `
+        <div class="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-0">
+          <span class="truncate">${t.title}</span>
+          <div class="flex gap-1">
+            <button onclick="approveTask(${t.id})" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Duyệt</button>
+            <button onclick="rejectTask(${t.id})" class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Từ chối</button>
+          </div>
+        </div>
+      `).join('') : '<p class="text-slate-400 text-sm">Không có việc chờ duyệt</p>';
+
+      document.getElementById('homeSocial').innerHTML = socials.map(s => `
+        <div class="flex justify-between py-1">
+          <span>${icon(s.platform)} ${s.name}</span>
+          <span class="text-slate-500">${(s.followers||0).toLocaleString('vi-VN')} · ${formatMoney(s.revenue)}</span>
+        </div>
+      `).join('');
+    }
+
+    // ==================== SOCIAL ====================
+    function renderSocials() {
+      const box = document.getElementById('socialList');
+      box.innerHTML = socials.map(s => `
+        <div class="card p-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="font-semibold">${icon(s.platform)} ${s.name}</div>
+              <a href="${s.link}" target="_blank" class="text-xs text-blue-600">Mở liên kết →</a>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editSocial(${s.id})" class="text-xs text-amber-600">Sửa</button>
+              <button onclick="deleteSocial(${s.id})" class="text-xs text-red-500">Xóa</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-3">
+            <div class="bg-slate-50 rounded-lg p-2 text-center">
+              <div class="text-xs text-slate-500">Theo dõi</div>
+              <div class="font-bold">${(s.followers||0).toLocaleString('vi-VN')}</div>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-2 text-center">
+              <div class="text-xs text-slate-500">Doanh thu</div>
+              <div class="font-bold text-amber-600">${formatMoney(s.revenue)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openSocialModal(id) {
+      document.getElementById('socialModal').classList.remove('hidden');
+      document.getElementById('socialModal').classList.add('flex');
+      if (id) {
+        const s = socials.find(x => x.id === id);
+        document.getElementById('socialId').value = s.id;
+        document.getElementById('socialPlatform').value = s.platform;
+        document.getElementById('socialName').value = s.name;
+        document.getElementById('socialLink').value = s.link || '';
+        document.getElementById('socialFollowers').value = s.followers || 0;
+        document.getElementById('socialRevenue').value = s.revenue || 0;
+      } else {
+        document.getElementById('socialId').value = '';
+        document.getElementById('socialName').value = '';
+        document.getElementById('socialLink').value = '';
+        document.getElementById('socialFollowers').value = 0;
+        document.getElementById('socialRevenue').value = 0;
+      }
+    }
+    function closeSocialModal() {
+      document.getElementById('socialModal').classList.add('hidden');
+      document.getElementById('socialModal').classList.remove('flex');
+    }
+    function saveSocial() {
+      const id = document.getElementById('socialId').value;
+      const data = {
+        platform: document.getElementById('socialPlatform').value,
+        name: document.getElementById('socialName').value.trim(),
+        link: document.getElementById('socialLink').value.trim(),
+        followers: parseInt(document.getElementById('socialFollowers').value) || 0,
+        revenue: parseInt(document.getElementById('socialRevenue').value) || 0
+      };
+      if (!data.name) return alert('Nhập tên kênh');
+      if (id) {
+        const i = socials.findIndex(x => x.id == id);
+        socials[i] = { ...socials[i], ...data };
+      } else {
+        data.id = Date.now();
+        socials.push(data);
+      }
+      save('tktd_socials', socials);
+      closeSocialModal();
+      renderSocials();
+      renderHome();
+    }
+    function editSocial(id) { openSocialModal(id); }
+    function deleteSocial(id) {
+      if (!checkPass()) return;
+      if (confirm('Xóa kênh này?')) {
+        socials = socials.filter(x => x.id !== id);
+        save('tktd_socials', socials);
+        renderSocials();
+        renderHome();
+      }
+    }
+
+    // ==================== TASKS ====================
+    function renderTasks() {
+      let list = tasks;
+      if (currentFilter !== 'all') list = tasks.filter(t => t.status === currentFilter);
+      const box = document.getElementById('taskList');
+      if (!list.length) {
+        box.innerHTML = '<p class="text-center text-slate-400 py-8">Chưa có công việc</p>';
+        return;
+      }
+      box.innerHTML = list.map(t => `
+        <div class="card p-4">
+          <div class="flex justify-between items-start gap-2">
+            <div class="flex-1">
+              <div class="font-medium ${t.status==='done'?'line-through text-slate-400':''}">${t.title}</div>
+              <div class="text-xs text-slate-500 mt-1">${t.assigneeName} · Hạn: ${t.deadline || '—'}</div>
+              ${t.desc ? `<p class="text-xs text-slate-500 mt-1">${t.desc}</p>` : ''}
+            </div>
+            <span class="badge status-${t.status}">${statusText(t.status)}</span>
+          </div>
+          <div class="flex gap-2 mt-3 flex-wrap">
+            ${t.status === 'pending' ? `
+              <button onclick="approveTask(${t.id})" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">Duyệt</button>
+              <button onclick="rejectTask(${t.id})" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full">Từ chối</button>
+            ` : ''}
+            ${t.status === 'approved' ? `<button onclick="startTask(${t.id})" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">Bắt đầu làm</button>` : ''}
+            ${t.status === 'doing' ? `<button onclick="doneTask(${t.id})" class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">Hoàn thành</button>` : ''}
+            <button onclick="deleteTask(${t.id})" class="text-xs text-red-500 px-2">Xóa</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function statusText(s) {
+      return { pending: 'Chờ duyệt', approved: 'Đã duyệt', rejected: 'Từ chối', doing: 'Đang làm', done: 'Hoàn thành' }[s] || s;
+    }
+
+    function filterTasks(f) {
+      currentFilter = f;
+      document.querySelectorAll('.task-filter').forEach(b => {
+        b.classList.remove('bg-amber-100', 'text-amber-800');
+        b.classList.add('bg-slate-100');
+      });
+      event.target.classList.add('bg-amber-100', 'text-amber-800');
+      event.target.classList.remove('bg-slate-100');
+      renderTasks();
+    }
+
+    function openTaskModal() {
+      const sel = document.getElementById('taskAssignee');
+      sel.innerHTML = members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join('');
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskDesc').value = '';
+      document.getElementById('taskDeadline').value = '';
+      document.getElementById('taskNeedApprove').checked = true;
+      document.getElementById('taskModal').classList.remove('hidden');
+      document.getElementById('taskModal').classList.add('flex');
+    }
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.add('hidden');
+      document.getElementById('taskModal').classList.remove('flex');
+    }
+    function saveTask() {
+      const title = document.getElementById('taskTitle').value.trim();
+      if (!title) return alert('Nhập tiêu đề');
+      const mid = document.getElementById('taskAssignee').value;
+      const m = members.find(x => x.id == mid);
+      const needApprove = document.getElementById('taskNeedApprove').checked;
+
+      // Kiểm tra chồng chéo
+      const deadline = document.getElementById('taskDeadline').value;
+      const conflict = tasks.find(t => t.assigneeId == mid && t.deadline === deadline && !['done','rejected'].includes(t.status));
+      if (conflict && !confirm(`${m.name} đã có việc khác cùng hạn. Vẫn tạo?`)) return;
+
+      tasks.unshift({
+        id: Date.now(),
+        title,
+        desc: document.getElementById('taskDesc').value.trim(),
+        assigneeId: m.id,
+        assigneeName: m.name,
+        deadline,
+        status: needApprove ? 'pending' : 'approved',
+        createdAt: new Date().toISOString()
+      });
+      save('tktd_tasks', tasks);
+      closeTaskModal();
+      renderTasks();
+      renderHome();
+    }
+
+    function approveTask(id) {
+      if (!checkPass()) return;
+      const t = tasks.find(x => x.id === id);
+      if (t) { t.status = 'approved'; save('tktd_tasks', tasks); renderTasks(); renderHome(); }
+    }
+    function rejectTask(id) {
+      if (!checkPass()) return;
+      const t = tasks.find(x => x.id === id);
+      if (t) { t.status = 'rejected'; save('tktd_tasks', tasks); renderTasks(); renderHome(); }
+    }
+    function startTask(id) {
+      const t = tasks.find(x => x.id === id);
+      if (t) { t.status = 'doing'; save('tktd_tasks', tasks); renderTasks(); }
+    }
+    function doneTask(id) {
+      const t = tasks.find(x => x.id === id);
+      if (t) { t.status = 'done'; save('tktd_tasks', tasks); renderTasks(); renderHome(); }
+    }
+    function deleteTask(id) {
+      if (!checkPass()) return;
+      if (confirm('Xóa công việc?')) {
+        tasks = tasks.filter(x => x.id !== id);
+        save('tktd_tasks', tasks);
+        renderTasks();
+        renderHome();
+      }
+    }
+
+    // ==================== LIVE ====================
+    function renderLive() {
+      document.getElementById('liveToggle').checked = liveOn;
+      document.getElementById('liveStatusText').textContent = liveOn ? 'Đang bật' : 'Đang tắt';
+      document.getElementById('liveBox').innerHTML = liveOn
+        ? '<div class="text-center"><div class="text-red-500 font-bold mb-1">● LIVE</div><div class="text-sm">Đang phát trực tiếp</div></div>'
+        : 'Livestream đang tắt';
+
+      const links = JSON.parse(localStorage.getItem('tktd_live_links') || '{}');
+      document.getElementById('liveLinkFb').value = links.fb || '';
+      document.getElementById('liveLinkTiktok').value = links.tiktok || '';
+      document.getElementById('liveLinkYt').value = links.yt || '';
+      document.getElementById('liveFb').href = links.fb || '#';
+      document.getElementById('liveTiktok').href = links.tiktok || '#';
+      document.getElementById('liveYt').href = links.yt || '#';
+    }
+    function toggleLive() {
+      if (!checkPass()) {
+        document.getElementById('liveToggle').checked = liveOn;
+        return;
+      }
+      liveOn = document.getElementById('liveToggle').checked;
+      localStorage.setItem('tktd_live', liveOn);
+      renderLive();
+    }
+    function saveLiveLinks() {
+      const links = {
+        fb: document.getElementById('liveLinkFb').value.trim(),
+        tiktok: document.getElementById('liveLinkTiktok').value.trim(),
+        yt: document.getElementById('liveLinkYt').value.trim()
+      };
+      localStorage.setItem('tktd_live_links', JSON.stringify(links));
+      renderLive();
+      alert('Đã lưu liên kết Live');
+    }
+
+    // ==================== VIDEO & STORAGE ====================
+    function createVideo() {
+      const prompt = document.getElementById('videoPrompt').value.trim();
+      if (!prompt) return alert('Nhập mô tả video');
+      storage.unshift({
+        id: Date.now(),
+        title: prompt.slice(0, 40) + (prompt.length > 40 ? '...' : ''),
+        category: 'marketing',
+        type: 'video-request',
+        createdAt: new Date().toISOString()
+      });
+      save('tktd_storage', storage);
+      document.getElementById('videoPrompt').value = '';
+      alert('Đã lưu yêu cầu tạo video. AI sẽ xử lý ở giai đoạn sau.');
+      renderStorage();
+    }
+    function renderStorage() {
+      let list = storage;
+      if (storageFilter !== 'all') list = storage.filter(x => x.category === storageFilter);
+      const box = document.getElementById('storageList');
+      box.innerHTML = list.length ? list.map(s => `
+        <div class="flex justify-between items-center py-2 border-b border-slate-100">
+          <div>
+            <div class="font-medium">${s.title}</div>
+            <div class="text-xs text-slate-400">${s.category} · ${new Date(s.createdAt).toLocaleDateString('vi-VN')}</div>
+          </div>
+          <button onclick="deleteStorage(${s.id})" class="text-red-500 text-xs">Xóa</button>
+        </div>
+      `).join('') : '<p class="text-slate-400 text-sm py-4 text-center">Kho trống</p>';
+    }
+    function filterStorage(f) {
+      storageFilter = f;
+      document.querySelectorAll('.storage-filter').forEach(b => {
+        b.classList.remove('bg-amber-100', 'text-amber-800');
+        b.classList.add('bg-slate-100');
+      });
+      event.target.classList.add('bg-amber-100', 'text-amber-800');
+      event.target.classList.remove('bg-slate-100');
+      renderStorage();
+    }
+    function addStorageItem() {
+      const title = prompt('Tên file / nội dung:');
+      if (!title) return;
+      const cat = prompt('Hạng mục (marketing/product/live/other):', 'other') || 'other';
+      storage.unshift({ id: Date.now(), title, category: cat, createdAt: new Date().toISOString() });
+      save('tktd_storage', storage);
+      renderStorage();
+    }
+    function deleteStorage(id) {
+      storage = storage.filter(x => x.id !== id);
+      save('tktd_storage', storage);
+      renderStorage();
+    }
+
+    // ==================== MEMBERS ====================
+    function renderMembers() {
+      document.getElementById('memberList').innerHTML = members.map(m => `
+        <div class="card p-4 flex justify-between items-center">
+          <div>
+            <div class="font-medium">${m.name}</div>
+            <div class="text-xs text-slate-500">${m.role === 'admin' ? 'Quản trị viên' : m.role === 'editor' ? 'Kiểm duyệt / Biên tập' : 'Thành viên'}</div>
+          </div>
+          ${m.id !== 1 ? `<button onclick="deleteMember(${m.id})" class="text-red-500 text-sm">Xóa</button>` : '<span class="text-xs text-amber-600">Cao nhất</span>'}
+        </div>
+      `).join('');
+    }
+    function openMemberModal() {
+      document.getElementById('memberName').value = '';
+      document.getElementById('memberModal').classList.remove('hidden');
+      document.getElementById('memberModal').classList.add('flex');
+    }
+    function closeMemberModal() {
+      document.getElementById('memberModal').classList.add('hidden');
+      document.getElementById('memberModal').classList.remove('flex');
+    }
+    function saveMember() {
+      const name = document.getElementById('memberName').value.trim();
+      if (!name) return alert('Nhập tên');
+      members.push({ id: Date.now(), name, role: document.getElementById('memberRole').value });
+      save('tktd_members', members);
+      closeMemberModal();
+      renderMembers();
+      renderHome();
+    }
+    function deleteMember(id) {
+      if (!checkPass()) return;
+      if (confirm('Xóa thành viên này?')) {
+        members = members.filter(x => x.id !== id);
+        save('tktd_members', members);
+        renderMembers();
+        renderHome();
+      }
+    }
+
+    // ==================== NOTES / REMINDERS ====================
+    function renderNotes() {
+      const box = document.getElementById('noteList');
+      box.innerHTML = notes.length ? notes.map(n => `
+        <div class="card p-4">
+          <div class="flex justify-between">
+            <p class="text-sm">${n.content}</p>
+            <button onclick="deleteNote(${n.id})" class="text-red-500 text-xs">Xóa</button>
+          </div>
+          <div class="text-xs text-slate-400 mt-2">
+            ${n.time ? '🔔 ' + new Date(n.time).toLocaleString('vi-VN') : ''} · ${new Date(n.created).toLocaleDateString('vi-VN')}
+          </div>
+        </div>
+      `).join('') : '<p class="text-center text-slate-400 py-8">Chưa có nhắc việc</p>';
+    }
+    function openNoteModal() {
+      document.getElementById('noteContent').value = '';
+      document.getElementById('noteTime').value = '';
+      document.getElementById('noteModal').classList.remove('hidden');
+      document.getElementById('noteModal').classList.add('flex');
+    }
+    function closeNoteModal() {
+      document.getElementById('noteModal').classList.add('hidden');
+      document.getElementById('noteModal').classList.remove('flex');
+    }
+    function saveNote() {
+      const content = document.getElementById('noteContent').value.trim();
+      if (!content) return alert('Nhập nội dung');
+      const time = document.getElementById('noteTime').value;
+      notes.unshift({ id: Date.now(), content, time: time || null, created: new Date().toISOString() });
+      save('tktd_notes', notes);
+      closeNoteModal();
+      renderNotes();
+      if (time) {
+        const delay = new Date(time) - new Date();
+        if (delay > 0 && delay < 86400000 * 2) {
+          setTimeout(() => { ringBell(); alert('🔔 Nhắc việc: ' + content); }, delay);
+        }
+      }
+    }
+    function deleteNote(id) {
+      notes = notes.filter(x => x.id !== id);
+      save('tktd_notes', notes);
+      renderNotes();
+    }
+    function ringBell() {
+      try {
+        const ctx = new (AudioContext || webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = 880;
+        g.gain.setValueAtTime(0.3, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+        osc.start(); osc.stop(ctx.currentTime + 1.2);
+      } catch(e) {}
+    }
+
+    // ==================== THEME & SECURITY ====================
+    function toggleTheme() {
+      document.body.classList.toggle('theme-dark');
+      localStorage.setItem('tktd_theme', document.body.classList.contains('theme-dark') ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('tktd_theme') === 'dark') document.body.classList.add('theme-dark');
+
+    function changeAvatar() {
+      const url = prompt('Dán link ảnh đại diện mới:');
+      if (url) {
+        document.getElementById('adminAvatar').src = url;
+        localStorage.setItem('tktd_avatar', url);
+      }
+    }
+    if (localStorage.getItem('tktd_avatar')) {
+      document.getElementById('adminAvatar').src = localStorage.getItem('tktd_avatar');
+    }
+
+    function openSecurity() {
+      document.getElementById('securityModal').classList.remove('hidden');
+      document.getElementById('securityModal').classList.add('flex');
+    }
+    function closeSecurity() {
+      document.getElementById('securityModal').classList.add('hidden');
+      document.getElementById('securityModal').classList.remove('flex');
+    }
+    function setAdminPass() {
+      const p = document.getElementById('adminPass').value;
+      if (p.length < 4) return alert('Mật khẩu ít nhất 4 ký tự');
+      adminPass = p;
+      localStorage.setItem('tktd_pass', p);
+      alert('Đã lưu mật khẩu bảo mật');
+      closeSecurity();
+    }
+    function checkPass() {
+      if (!adminPass) return true;
+      const input = prompt('Nhập mật khẩu Quản trị:');
+      if (input === adminPass) return true;
+      alert('Sai mật khẩu');
+      return false;
+    }
+
+    // ==================== INIT ====================
+    renderHome();
+  </script>
+</body>
+</html>
